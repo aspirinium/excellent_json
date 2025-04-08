@@ -20,9 +20,9 @@ def select_file():
     user_os = platform.system()
 
     if user_os == "Windows":
-        default_directory = f"C:/Users/{username}/Develop/excellent_json"
+        default_directory = f"C:/Users/{username}/Downloads"
     elif user_os == "Linux":
-        default_directory = f"/home/{username}/Develop/excellent_json"
+        default_directory = f"/home/{username}/Downloads"
     else:
         default_directory = user_home 
     
@@ -63,6 +63,8 @@ def convert_to_geojson():
             )
 
         excel_data = replace_commas_with_dots_excel(excel_data)
+
+        excel_data = excel_data.fillna("")
     
         excel_data["geometry"] = gpd.GeoSeries.from_wkt(excel_data["geometry"])
         geo_data = gpd.GeoDataFrame(excel_data, geometry=excel_data["geometry"])
