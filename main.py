@@ -4,6 +4,15 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import os
 import platform
+import sys
+
+def resource_path(relative_path):
+    try:
+        base_path = sys._MEIPASS2
+    except Exception:
+        base_path = os.path.abspath(".")
+
+    return os.path.join(base_path, relative_path)
 
 def select_file():
     user_home = os.path.expanduser("~")
@@ -11,9 +20,9 @@ def select_file():
     user_os = platform.system()
 
     if user_os == "Windows":
-        default_directory = f"C:/Users/{username}/Documents"
+        default_directory = f"C:/Users/{username}/Develop/excellent_json"
     elif user_os == "Linux":
-        default_directory = f"/home/{username}/Documents"
+        default_directory = f"/home/{username}/Develop/excellent_json"
     else:
         default_directory = user_home 
     
@@ -44,10 +53,15 @@ def convert_to_geojson():
     
     try:
         excel_data = pd.read_excel(file_path)
-        numeric_columns = ['GesamthoeheM', "KEV-Liste", "Rotordurchmesser", 'TotalTurbinen', "MW", "GWhA"]  # Add column names here
+        numeric_columns = ['GesamthoeheM', "KEV-Liste", "Rotordurchmesser", 'TotalTurbinen', "MW", "GWhA"]
         for column in numeric_columns:
             excel_data[column] = pd.to_numeric(excel_data[column], errors='coerce')
     
+        if "Kanton" in excel_data.columns:
+            excel_data["Kanton"] = excel_data["Kanton"].fillna("").apply(
+                lambda x: [k.strip() for k in x.split(",")] if isinstance(x, str) and x.strip() else []
+            )
+
         excel_data = replace_commas_with_dots_excel(excel_data)
     
         excel_data["geometry"] = gpd.GeoSeries.from_wkt(excel_data["geometry"])
@@ -69,9 +83,15 @@ def convert_geojson_to_excel():
     
     try:
         geo_data = gpd.read_file(file_path)
+
+        if "Kanton" in geo_data.columns:
+            geo_data["Kanton"] = geo_data["Kanton"].apply(
+                lambda x: ", ".join(x) if isinstance(x, list) else x
+            )
         
         numeric_columns = ['GesamthoeheM', "KEV-Liste", "Rotordurchmesser", 'TotalTurbinen', "MW", "GWhA"]
         geo_data = replace_commas_with_dots(geo_data, numeric_columns)
+        
         
         geo_data['lat'] = geo_data['geometry'].apply(lambda x: x.y if x else None)
         geo_data['lon'] = geo_data['geometry'].apply(lambda x: x.x if x else None)
