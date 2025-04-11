@@ -6,6 +6,11 @@ import os
 import platform
 import sys
 
+import json
+import pandas as pd
+import geopandas as gpd
+from shapely.geometry import shape
+
 def resource_path(relative_path):
     try:
         base_path = sys._MEIPASS2
@@ -20,9 +25,9 @@ def select_file():
     user_os = platform.system()
 
     if user_os == "Windows":
-        default_directory = f"C:/Users/{username}/Downloads"
+        default_directory = f"C:/Users/{username}/Documents"
     elif user_os == "Linux":
-        default_directory = f"/home/{username}/Downloads"
+        default_directory = f"/home/{username}/Documents"
     else:
         default_directory = user_home 
     
@@ -84,12 +89,29 @@ def convert_geojson_to_excel():
         return
     
     try:
-        geo_data = gpd.read_file(file_path)
+        #geo_data = gpd.read_file(file_path)
+        #print(geo_data.columns)
 
-        if "Kanton" in geo_data.columns:
-            geo_data["Kanton"] = geo_data["Kanton"].apply(
-                lambda x: ", ".join(x) if isinstance(x, list) else x
-            )
+        with open(file_path) as f:
+            raw = json.load(f)
+
+        records = []
+        for feature in raw["features"]:
+            props = feature["properties"]
+            geometry = shape(feature["geometry"])
+            props["geometry"] = geometry
+            records.append(props)
+
+        geo_data = gpd.GeoDataFrame(records, geometry="geometry")
+
+        def join_kanton(val):
+            if isinstance(val, list):
+                return ", ".join(val)
+            elif val is None:
+                return ""
+            return str(val)
+
+        geo_data["Kanton"] = geo_data["Kanton"].apply(join_kanton)
         
         numeric_columns = ['GesamthoeheM', "KEV-Liste", "Rotordurchmesser", 'TotalTurbinen', "MW", "GWhA"]
         geo_data = replace_commas_with_dots(geo_data, numeric_columns)
