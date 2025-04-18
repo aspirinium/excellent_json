@@ -25,9 +25,9 @@ def select_file():
     user_os = platform.system()
 
     if user_os == "Windows":
-        default_directory = f"C:/Users/{username}/Documents"
+        default_directory = f"C:/Users/{username}/Develop/excellent_json"
     elif user_os == "Linux":
-        default_directory = f"/home/{username}/Documents"
+        default_directory = f"/home/{username}/Develop/excellent_json"
     else:
         default_directory = user_home 
     
@@ -91,8 +91,9 @@ def convert_geojson_to_excel():
     try:
         #geo_data = gpd.read_file(file_path)
         #print(geo_data.columns)
+        position = 22178
 
-        with open(file_path) as f:
+        with open(file_path, encoding="utf8", errors="ignore") as f:
             raw = json.load(f)
 
         records = []
